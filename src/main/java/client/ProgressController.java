@@ -1,67 +1,41 @@
 package client;
 
-import javafx.application.Platform;
+import javafx.concurrent.Task;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 
-import java.net.URL;
-import java.util.ResourceBundle;
-
-import static java.lang.Thread.sleep;
-
 @Slf4j
-public class ProgressController  implements Initializable {
+public class ProgressController{
 
-    private MainWndController mainWndController;
-    private Stage stage;
+    @FXML
+    public Label progressText;
+    @FXML
+    public ProgressBar progressIndicator;
+    public AnchorPane mainPanel;
 
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
+    Task<Void> task;
+
+    public void startProgress(Task<Void> task)  {
+
+        this.task = task;
 
         progressIndicator.setProgress(0);
-        progressText.setText("Start transfer ...");
+        progressIndicator.progressProperty().bind(task.progressProperty());
+        progressText.textProperty().bind(task.messageProperty());
+        Thread thr = new Thread(task);
+
+        thr.setDaemon(true);
+        thr.start();
+
 
     }
 
-    @FXML
-    private Label progressText;
-    @FXML
-    private ProgressBar progressIndicator;
-
-    public void setMainCtrl(MainWndController mainWndController, Stage stg){
-        this.mainWndController = mainWndController;
-        this.stage = stg;
+    public void onCancel(ActionEvent actionEvent) {
+        task.cancel();
     }
-
-    public void start(){
-
-        Thread tr = new Thread(()->{
-            while(true){
-                Platform.runLater(()->{
-                    progressIndicator.setProgress(mainWndController.getProgress());
-                    progressText.setText(mainWndController.getTextForProgress());
-                });
-
-                if(mainWndController.getTransferState()==false){
-                    Platform.runLater(()-> {
-                                stage.close();
-                            }
-                    );
-                    return;
-                }
-                try {
-                    sleep(100);
-                } catch (InterruptedException e) {
-                    log.error("Progress error: {}", e.toString());
-                }
-            }
-        });
-        tr.start();
-
-    }
-
 }

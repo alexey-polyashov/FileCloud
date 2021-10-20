@@ -14,10 +14,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
-import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.File;
 
 @Slf4j
 public class Network {

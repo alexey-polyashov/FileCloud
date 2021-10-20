@@ -6,15 +6,13 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.AnchorPane;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.swing.*;
-import java.io.File;
+
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.ResourceBundle;
 
 @Slf4j
@@ -75,5 +73,17 @@ public class AuthWndController  implements Initializable {
             }
         });
 
+    }
+
+    public void enterPassword(KeyEvent keyEvent) throws InterruptedException {
+        if(keyEvent.getCode()== KeyCode.ENTER){
+            doLogin(new ActionEvent());
+        }
+    }
+
+    public void pressedLoginBtn(KeyEvent keyEvent) throws InterruptedException {
+        if(keyEvent.getCode()== KeyCode.ENTER){
+            doLogin(new ActionEvent());
+        }
     }
 }
