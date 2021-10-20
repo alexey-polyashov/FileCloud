@@ -1,14 +1,15 @@
 package common;
 
+import client.MainWndController;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 public class CloudFileSystem {
@@ -22,10 +23,13 @@ public class CloudFileSystem {
     private long totalTransferBytes = 0;
     private FileSystemStates state = FileSystemStates.IDLE;
 
+    private Queue<FileInfo> fileList = new LinkedList<>();
+    private int totalFilesInList = 0;
+
     private Path userFolder; //absolute path, may be null
     private Path currentFolder;
 
-    public CloudFileSystem(Path currentFolder, Path userFolder, boolean serverSide) {
+    public CloudFileSystem(Path currentFolder, Path userFolder, boolean serverSide) throws IOException {
 
         if(!currentFolder.isAbsolute()){
             currentFolder = Paths.get(Options.SERVER_ROOT, currentFolder.toString());
@@ -120,6 +124,92 @@ public class CloudFileSystem {
         return getFullList(FILES | DIRECTORIES);
     }
 
+    public List<FileInfo>  getFilesInDirForDelete(Path dirPath){
+
+        List<FileInfo> fileList = new ArrayList<>();
+
+        if(!dirPath.isAbsolute()){
+            dirPath = getAbsolutePathToFile(dirPath);
+        }
+
+        File filePath = new File(String.valueOf(dirPath));
+        for (File f: filePath.listFiles()) {
+            if(f.isFile()){
+                fileList.add(new FileInfo(FileTypes.FILE, f.getPath().toString(), 0));
+            }
+        }
+        for (File f: filePath.listFiles()) {
+            if(f.isDirectory()){
+                fileList.add(new FileInfo(FileTypes.DIRECTORY, f.getPath().toString(), 0));
+            }
+        }
+        return fileList;
+    }
+
+    public List<FileInfo> getFilesInDir(Path dir){
+
+        List<FileInfo> fileList = new ArrayList<>();
+
+        try {
+
+            if(!dir.isAbsolute()){
+                dir = getAbsolutePathToFile(dir);
+            }
+
+            Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException
+                {
+                    fileList.add(new FileInfo(FileTypes.FILE, file.toString(), attrs.size()));
+                    return FileVisitResult.CONTINUE;
+                }
+
+            });
+        } catch (IOException e) {
+            log.error("e=", e.toString());
+            return fileList;
+        }
+
+
+        return fileList;
+    }
+
+    public List<FileInfo> getSubFoldersInDir(Path dir){
+
+        List<FileInfo> folderList = new ArrayList<>();
+
+        try {
+
+            if(!dir.isAbsolute()){
+                dir = getAbsolutePathToFile(dir);
+            }
+
+            Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                    folderList.add(new FileInfo(FileTypes.DIRECTORY, dir.toString(), attrs.size()));
+                    return FileVisitResult.CONTINUE;
+                }
+
+            });
+        } catch (IOException e) {
+            log.error("e=", e.toString());
+            return folderList;
+        }
+
+
+        return folderList;
+    }
 
     public List<FileInfo> getFullList(int listType){
 
@@ -180,16 +270,12 @@ public class CloudFileSystem {
 
     }
 
-    public boolean delete(Path filePath) throws NoSuchFileException{
-        try {
-            if(!Files.exists(filePath)){
-                throw new NoSuchFileException(filePath.toString());
-            }
-            Files.delete(filePath);
-        } catch (IOException e) {
-            log.error("e=", e);
-            return false;
+    public boolean delete(Path filePath) throws IOException {
+        Path abs = filePath;
+        if(!filePath.isAbsolute()){
+            abs = getAbsolutePathToFile(filePath);
         }
+        Files.delete(abs);
         return true;
     }
 
@@ -204,12 +290,11 @@ public class CloudFileSystem {
         return true;
     }
 
-    public boolean makeDir(Path newDir){
-        try {
-            Files.createDirectory(newDir.toAbsolutePath());
-        } catch (IOException e) {
-            log.error("e=", e);
-            return false;
+    public boolean makeDir(Path newDir) throws IOException {
+        if(newDir.isAbsolute()){
+            Files.createDirectory(newDir);
+        }else{
+            Files.createDirectory(getAbsolutePathToFile(newDir));
         }
         return true;
     }
@@ -244,6 +329,10 @@ public class CloudFileSystem {
 
     public Path getAbsolutePathToFile(String fName){
         return Paths.get(currentFolder.toString(), fName);
+    }
+
+    public Path getAbsolutePathToFile(Path fName){
+        return Paths.get(currentFolder.toString(), fName.getFileName().toString());
     }
 
     public Message getFilePart(Path absFilePath) throws IOException {
@@ -332,5 +421,68 @@ public class CloudFileSystem {
     }
 
 
+    public void prepareToDelete(List<FileInfo> listFromClient) {
 
+        fileList = new LinkedList<>();
+        List<FileInfo> buf;
+
+        for (FileInfo fi:listFromClient) {
+            if(fi.getFileType() == FileTypes.DIRECTORY){
+                buf = getFilesInDir(Paths.get(fi.getName()));
+                fileList.addAll(buf);
+                totalFilesInList += buf.size();
+                buf.clear();
+                buf = getSubFoldersInDir(Paths.get(fi.getName()));
+                Collections.reverse(buf);
+                fileList.addAll(buf);
+                totalFilesInList += buf.size();
+                buf.clear();
+            }else{
+                fileList.add(new FileInfo(FileTypes.FILE, fi.getName(), fi.getSize()));
+                totalFilesInList++;
+            }
+        }
+
+    }
+
+    public Message deleteFromFileList() {
+
+        FileInfo fi = new FileInfo(FileTypes.FILE, "", 0);
+
+        for (int i = 0; i < 10; i++) {
+
+            if(fileList.isEmpty()){
+                Message srvMes = Message.builder()
+                        .command(CommandIDs.RESPONCE_OK)
+                        .commandData(fi.getName())
+                        .build();
+                return srvMes;
+            }
+
+            fi = fileList.remove();
+
+            try {
+                log.debug("Delete file/dir {}", fi.getName());
+                delete(Paths.get(fi.getName()));
+            } catch (IOException e) {
+                log.error("Delete error: {}" + e.toString());
+                Message srvMes = Message.builder()
+                        .command(CommandIDs.RESPONCE_SERVERERROR)
+                        .commandData(e.toString())
+                        .build();
+                return srvMes;
+            }
+
+        }
+
+        Message srvMes = Message.builder()
+                .command(CommandIDs.RESPONCE_DELETEPROGRESS)
+                .commandData(fi.getName())
+                .partLen(totalFilesInList)
+                .partNum(totalFilesInList - fileList.size())
+                .build();
+
+        return srvMes;
+
+    }
 }

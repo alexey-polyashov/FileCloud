@@ -1,12 +1,9 @@
 package client;
 
 
-import common.CommandIDs;
 import common.Message;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelId;
 import io.netty.channel.SimpleChannelInboundHandler;
-import javafx.application.Platform;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

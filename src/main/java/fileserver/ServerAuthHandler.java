@@ -42,6 +42,10 @@ public class ServerAuthHandler extends SimpleChannelInboundHandler<Message> {
                         log.info("Login fail");
                         msg.setCommand(CommandIDs.RESPONCE_AUTHERROR);
                         msg.setCommandData("Incorrect login or password");
+                    }catch (Exception e){
+                        log.error("Server error: {}", e.toString());
+                        msg.setCommand(CommandIDs.RESPONCE_SERVERERROR);
+                        msg.setCommandData("Server error: " + e.toString());
                     }
                 }
             }
