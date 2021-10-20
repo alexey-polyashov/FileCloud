@@ -8,6 +8,8 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="fileCloud" />
+        <module name="firsproject-6e330482a4a6fa5e1ef80dddc747b8014bb7321a" />
+        <module name="FileCloud" />
       </profile>
     </annotationProcessing>
   </component>
