@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox VBox.vgrow="ALWAYS" fx:id="mainPane" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.MainWndController">
+<VBox VBox.vgrow="ALWAYS" fx:id="mainPane" xmlns="http://javafx.com/javafx/8.0.291" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.MainWndController">
    <MenuBar>
      <menus>
        <Menu mnemonicParsing="false" text="Commands">

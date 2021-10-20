@@ -3,7 +3,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane fx:id="mainPanel" prefHeight="116.0" prefWidth="441.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.ProgressController">
+<AnchorPane fx:id="mainPanel" prefHeight="116.0" prefWidth="441.0" xmlns="http://javafx.com/javafx/8.0.291" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.ProgressController">
    <children>
       <Label fx:id="progressText" layoutX="15.0" layoutY="14.0" prefHeight="18.0" prefWidth="411.0" text="Source -&gt; Destination" />
       <ProgressBar fx:id="progressIndicator" layoutX="15.0" layoutY="55.0" prefHeight="18.0" prefWidth="411.0" progress="0.0" />

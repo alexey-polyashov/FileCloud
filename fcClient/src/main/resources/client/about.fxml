@@ -4,7 +4,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<AnchorPane fx:id="mainPane" prefHeight="241.0" prefWidth="456.0" style="-fx-background-color: lightblue;-fx-background-radius: 20;-fx-border-radius: 20" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.AboutController">
+<AnchorPane fx:id="mainPane" prefHeight="241.0" prefWidth="456.0" style="-fx-background-color: lightblue;-fx-background-radius: 20;-fx-border-radius: 20" xmlns="http://javafx.com/javafx/8.0.291" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.AboutController">
    <children>
       <Label alignment="TOP_RIGHT" layoutX="26.0" layoutY="14.0" prefHeight="82.0" prefWidth="331.0" text="FileCloudClient" textAlignment="CENTER" textFill="#1e4f9a">
          <font>
